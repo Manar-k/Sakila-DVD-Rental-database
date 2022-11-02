@@ -1,0 +1,66 @@
+/*Name: Manar Khamees*/
+
+/*Query 1 - query used for first insight*/
+WITH T1 AS(SELECT category_id, name AS family
+             FROM category 
+             WHERE name = 'Animation' OR name = 'Children' 
+                OR name = 'Classics' OR name = 'Comedy' 
+                OR name = 'Family' OR name = 'Music')
+SELECT f.title, c.family, COUNT(r.* ) AS Rentals
+  FROM film_category f_c
+  JOIN film f
+    ON f.film_id = f_c.film_id
+  JOIN T1 c
+    ON c.category_id  = f_c.category_id
+  JOIN inventory i
+    ON i.film_id = f.film_id
+  JOIN rental r
+    ON r.inventory_id = i.inventory_id
+ GROUP BY 1,2
+ ORDER BY 2,1;
+
+
+/*Query 2 - query used for second insight*/
+WITH T1 AS(SELECT category_id, name
+           FROM category
+           WHERE name = 'Animation' OR name = 'Children' 
+           OR name = 'Classics' OR name = 'Comedy'
+           OR name = 'Family' OR name = 'Music')
+SELECT f.title, c.name, f.rental_duration, NTILE(4) OVER ( ORDER BY f.rental_duration) AS standard_quartile
+FROM film_category f_c
+JOIN film f
+  ON f.film_id = f_c.film_id
+JOIN T1 c
+  ON c.category_id  = f_c.category_id
+ORDER BY 3;
+
+
+/*Query 3 - query used for third insight*/
+WITH T1 AS(SELECT category_id, name
+             FROM category
+             WHERE name = 'Animation' OR name = 'Children' 
+             OR name = 'Classics' OR name = 'Comedy'
+             OR name = 'Family' OR name = 'Music'),
+     T2 AS (SELECT f.title, c.name, f.rental_duration, NTILE(4) OVER ( ORDER BY f.rental_duration) AS standard_quartile
+              FROM film_category f_c
+              JOIN film f
+                ON f.film_id = f_c.film_id
+              JOIN T1 c
+                ON c.category_id  = f_c.category_id
+              ORDER BY 3)
+SELECT t2.name, t2.standard_quartile, COUNT(*)
+  FROM T2 t2
+GROUP BY 1,2
+ORDER BY 1,2;
+
+
+/*Query 4 - query used for fourth insight*/
+SELECT DATE_PART('month',r.rental_date) AS rental_month, 
+       DATE_PART('year',r.rental_date) AS rental_year, s.store_id, COUNT(r.rental_date) AS count_rentals
+  FROM rental r
+  JOIN staff st
+    ON st.staff_id = r.staff_id
+  JOIN store s
+    ON s.store_id = st.store_id
+GROUP BY 1,2,3
+ORDER BY 4 DESC;
